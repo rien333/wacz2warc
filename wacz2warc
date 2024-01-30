@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ "$1" == "-h" ] || [ "$1" == "--help" ] || [ -z "$1" ]; then
+  echo "Usage: `basename $0` FILE.wacz [FILE2.wacz ...]"
+  echo "  -h, --help			Display this help message"
+  echo "  FILE.wacz [FILE2.wacz ...]	One or more .wacz files to convert and combine"
+  echo 
+  echo "If the first input file is named ARCHIVE1.wacz, the output will be named ARCHIVE1.warc"
+  exit 0
+fi
+
+outfile=$(echo "$1" | sed "s/\.wacz/.warc/g")
+tmpdir=/tmp/wacz-$(echo "$outfile" | sed "s/\.warc//g")
+mkdir -p "$tmpdir"
+
+for f in $@
+do
+    # -o means overwrite
+    unzip -qq -o "$f" -d "$tmpdir"
+done
+
+for f in "$tmpdir"/archive/*gz
+do
+    gzip -q --force -d "$f"
+done
+
+cat "$tmpdir"/archive/*warc > "$outfile"
